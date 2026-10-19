@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.20">
+<meta name="app-version" content="0.0.21">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -28,6 +28,17 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
 .man b{color:var(--neon)}
 .sw{display:inline-block;width:12px;height:12px;vertical-align:-1px;border:1px solid var(--neon)}
 .sub{font-size:11px;letter-spacing:3px;color:var(--dim)}
+/* logo */
+#logo{position:relative;width:min(78vw,300px);aspect-ratio:1;margin-bottom:4px}
+#logoGrid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);gap:5%;transition:transform .45s cubic-bezier(.5,0,.3,1)}
+#logoGrid.snap{transition:none}
+.lt{display:flex;align-items:center;justify-content:center;border-radius:12%;border:1px solid rgba(25,211,255,.08);background:rgba(2,4,10,.55);color:rgba(25,211,255,.22);font-size:min(7vw,27px);font-weight:400}
+.lt.t{background:var(--neon);color:var(--bg);font-weight:800;font-size:min(9vw,34px);border-color:var(--neon);box-shadow:0 0 18px var(--neon),0 0 40px rgba(25,211,255,.45)}
+.lt.t.dec{background:rgba(25,211,255,.35);color:#9df6ff;box-shadow:0 0 10px var(--neon)}
+.lt.f{color:rgba(157,246,255,.55);text-shadow:0 0 8px var(--neon)}
+#tag{font-size:11px;letter-spacing:6px;color:var(--hi);text-shadow:0 0 8px var(--neon);margin-top:-2px}
+.menuBtns{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:6px}
+#help .man{max-height:70vh;overflow:auto}
 /* trace clock */
 .clock{font-size:26px;font-weight:700;letter-spacing:2px;color:var(--neon);text-shadow:0 0 10px var(--neon);font-variant-numeric:tabular-nums}
 .clock small{display:block;font-size:9px;letter-spacing:3px;color:var(--dim);font-weight:400;text-shadow:none;text-align:center}
@@ -104,17 +115,26 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
 <div id="vig" aria-hidden="true"></div>
 
 <div class="screen on" id="menu">
-  <h1>R0T8A</h1>
+  <div id="logo" aria-label="R0T8A"><div id="logoGrid"></div></div>
+  <div id="tag">PASSWORD BREACH</div>
+  <div class="sub" id="bestLine"></div>
+  <div class="menuBtns">
+    <button class="btn big" id="bJack">JACK IN</button>
+    <button class="btn wide" id="bHow">HOW TO HACK</button>
+  </div>
+</div>
+
+<div class="ov" id="help">
+  <h2>HOW TO HACK</h2>
   <div class="man">
   <b>TAKE THE MAINFRAME.</b> Every node hides a 5-letter password in a grid of every letter except X. Each letter shows how close it is:<br>
-  <span class="sw" style="background:#19d3ff"></span> right letter, right column &nbsp; <span class="sw" style="background:rgba(25,211,255,.3)"></span> in the password &nbsp; <span class="sw"></span> not in it.<br>
-  <b>▾</b> shifts a column down. <b>⟲ ⟳</b> (or a swipe) spin the grid.<br>
-  <b>LOCK</b>: tap a letter to lock it where it sits. It leaves a ghost letter behind the grid that stays put while everything else moves. All five locks go in one row: the first lock picks the row. Tap a ghost to release it. When all five are locked, <b>CRACK</b>.<br>
-  <b>REPEATED LETTERS</b>: only four letters light up? One repeats. Lock it in one place, then work the same letter round to its other column and lock it again.<br>
+  <span class="sw" style="background:#19d3ff"></span> right letter, right column &nbsp; <span class="sw" style="background:rgba(25,211,255,.3)"></span> in the password &nbsp; <span class="sw"></span> not in it.<br><br>
+  <b>MOVE</b>: ▾ shifts a column down. ⟲ ⟳ (or a swipe) spin the grid.<br><br>
+  <b>LOCK</b>: tap a letter to lock it where it sits. It leaves a ghost letter behind the grid that stays put while everything else moves. All five locks go in one row, and the first lock picks the row. Tap a ghost to release it. When all five are locked, <b>CRACK</b>.<br><br>
+  <b>REPEATED LETTERS</b>: only four letters light up? One repeats. Lock it in one place, then work the same letter round to its other column and lock it again.<br><br>
   <b>THE TRACE</b> starts when you jack in and never stops. Each leaf node cracked buys back 30s, and a subnet buys back 45s. A wrong crack costs 15s, and three wrong cracks burns the node (−30s, new layout). Crack three nodes to open a subnet, and all three subnets to reach the mainframe. If the trace hits zero, you're out.
   </div>
-  <div class="sub" id="bestLine"></div>
-  <button class="btn big" id="bJack">JACK IN</button>
+  <button class="btn wide" id="bHowX">CLOSE</button>
 </div>
 
 <div class="screen" id="map">
@@ -150,7 +170,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eAgain">JACK IN AGAIN</button></div>
   <button class="btn wide" id="eMenu">MENU</button>
 </div>
-<div id="ver">v0.0.20</div>
+<div id="ver">v0.0.21</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -343,11 +363,29 @@ $('board').addEventListener('pointercancel',()=>p0=null);
 $('rotL').onclick=()=>turn(-1); $('rotR').onclick=()=>turn(1); $('bCrack').onclick=crack;
 $('bReset').onclick=()=>{ if(!live()) return; const st=run.nodes[cur]; st.D=st.lv.grid.split(''); D=st.D; st.locks={}; render(); rainIn([0,1,2,3,4]); };
 $('bBack').onclick=()=>{ if(run&&!run.over) showMap(); };
-$('bJack').onclick=jackIn; $('eAgain').onclick=jackIn;
+$('bJack').onclick=jackIn; $('bHow').onclick=()=>$('help').classList.add('on'); $('bHowX').onclick=()=>$('help').classList.remove('on'); $('eAgain').onclick=jackIn;
 $('eMenu').onclick=menu; $('bAbort').onclick=()=>{ if(confirm('Abort this run?')) menu(); };
 function menu(){ run=null; cur=null; ['map','node'].forEach(id=>$(id).classList.remove('on')); $('end').classList.remove('on'); $('menu').classList.add('on');
   $('bestLine').textContent=rec.best?`BEST RUN · ${fmt(rec.best)} LEFT · ${rec.wins} MAINFRAME${rec.wins===1?'':'S'} OWNED`:''; }
 addEventListener('resize',()=>{ if(cur) layout(); });
+// ---------- logo: a cracked grid that spins and re-decodes ----------
+(function(){
+  const g=$('logoGrid'), T='R0T8A', tiles=[];
+  for(let i=0;i<25;i++){ const d=document.createElement('div'); d.className='lt'+(i>=10&&i<15?' t':''); d.textContent=i>=10&&i<15?T[i-10]:rg(); g.appendChild(d); tiles.push(d); }
+  const still=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(still) return;
+  function decode(){ for(let c=0;c<5;c++){ const el=tiles[10+c]; el.classList.add('dec'); let n=0;
+      const iv=setInterval(()=>{ el.textContent=rg(); if(++n>6+c*2){ clearInterval(iv); el.textContent=T[c]; el.classList.remove('dec'); } },55); } }
+  setInterval(()=>{ if(!$('menu').classList.contains('on')) return;
+    for(let k=0;k<3;k++){ const i=(Math.random()*25)|0; if(i<10||i>=15){ const el=tiles[i]; el.textContent=rg(); el.classList.add('f'); setTimeout(()=>el.classList.remove('f'),260); } } },140);
+  let dir=1;
+  setInterval(()=>{ if(!$('menu').classList.contains('on')) return;
+    g.style.transform=`rotate(${dir*90}deg)`;
+    setTimeout(()=>{ g.classList.add('snap'); g.style.transform=''; g.offsetWidth; g.classList.remove('snap');
+      for(let i=0;i<25;i++) if(i<10||i>=15) tiles[i].textContent=rg(); decode(); },470);
+    dir=-dir; },4200);
+  decode();
+})();
 menu(); requestAnimationFrame(tick);
 </script>
 
