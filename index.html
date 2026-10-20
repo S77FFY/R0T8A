@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.26">
+<meta name="app-version" content="0.0.30">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -229,7 +229,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.26</div>
+<div id="ver">v0.0.30</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -507,12 +507,16 @@ function drawMonth(){
     e.className='cd'+(r&&r.won?' won':r&&!r.won&&!r.started?' lost':'')+(k===today?' today':'')+(k>today?' future':'');
     e.innerHTML=d+(r&&r.won?`<i>${fmt(r.taken)}</i>`:r&&!r.started?'<i>✕</i>':''); g.appendChild(e); }
 }
+// share card: circuit grid. Every gap is a ▪️ emoji, so all cells are emoji-width and columns can't drift.
 function shareText(r,key){
-  const em={z:'⚡',c:'🟦',x:'⬛'}, g=r.g.split('').map(c=>em[c]);
-  const url=location.protocol.startsWith('http')?location.origin+location.pathname.replace(/index\.html$/,''):'https://s77ffy.github.io/R0T8A/';
+  const em={z:'⚡',c:'🟦',x:'⬛'}, g=r.g.split('').map(c=>em[c]||'⬛'), o='▪️';
+  const url=(location.protocol.startsWith('http')?location.host+location.pathname.replace(/index\.html$/,''):'s77ffy.github.io/R0T8A/').replace(/\/$/,'');
   const st=streaks();
-  return `R0T8A #${dayNo(key)}\n`+(r.won?`MAINFRAME OWNED in ${fmt(r.taken)}`:`TRACED ${r.n}/13`)+(st.now?` · 🔥${st.now}`:'')+
-    `\n${g.slice(0,9).join('')}\n${g.slice(9,12).join('')} ${g[12]}\n${url}`;
+  const top=`R0T8A #${dayNo(key)} `+(r.won?`⏱${fmt(r.taken)}`:`💀${r.n}/13`)+(st.now?` 🔥${st.now}`:'');
+  const row1=o.repeat(5)+g[12]+o.repeat(5);
+  const row2=o+g[9]+o.repeat(3)+g[10]+o.repeat(3)+g[11]+o;
+  const row3=g.slice(0,3).join('')+o+g.slice(3,6).join('')+o+g.slice(6,9).join('');
+  return [top,row1,row2,row3,url].join('\n');
 }
 function toast(t){ const e=document.createElement('div'); e.className='toast'; e.textContent=t; document.body.appendChild(e); setTimeout(()=>e.remove(),1700); }
 async function share(key){
