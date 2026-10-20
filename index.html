@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" id="vp" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.32">
+<meta name="app-version" content="0.0.33">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -188,7 +188,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <span class="sw" style="background:#19d3ff"></span> right letter, right column &nbsp; <span class="sw" style="background:rgba(25,211,255,.3)"></span> in the password &nbsp; <span class="sw"></span> not in it.<br><br>
   <b>MOVE</b>: ▾ shifts a column down. ⟲ ⟳ (or a swipe) spin the grid.<br><br>
   <b>SUPERCHARGE</b>: get every password letter lit in its right column and they snap into line. Swipe left to right across them to crack the node. Swipe within 1 second for +10s.<br><br>
-  <b>REPEATED LETTERS</b>: only four letters light up? One repeats. Tap it to lock it: it leaves a ghost behind the grid that stays put while everything moves. Then work the same letter round to its other column. Ghosts all share one row, and you can tap one to release it.<br><br>
+  <b>REPEATED LETTERS</b>: only four letters light up? One repeats. Once it's lit in its right column, tap it to lock it: it leaves a ghost behind the grid that stays put while everything moves. Then work the same letter round to its other column. Ghosts all share one row, and you can tap one to release it.<br><br>
   <b>DAILY NETWORK</b>: everyone gets the same network each day. Your first run of the day counts towards your streak and your time, and leaving mid-run counts as traced. Share your result and compare times. FREE RUN lets you practise on random networks that don't count.<br><br>
   <b>THE TRACE</b> starts when you jack in and never stops. Each leaf node cracked buys back 30s, and a subnet buys back 45s. Crack three nodes to open a subnet, and all three subnets to reach the mainframe. If the trace hits zero, you're out.
   </div>
@@ -229,7 +229,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.32</div>
+<div id="ver">v0.0.33</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -260,6 +260,10 @@ const $=id=>document.getElementById(id);
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 document.addEventListener('touchmove',e=>{ if(e.touches&&e.touches.length>1) e.preventDefault(); },{passive:false});
+(function(){ const node=document.getElementById('node');
+  node.addEventListener('touchstart',e=>{ const b=e.target.closest('button'); if(!b&&!e.target.closest('#board')) { e.preventDefault(); return; }
+    if(b){ e.preventDefault(); if(!b.disabled) b.click(); } },{passive:false});
+  node.addEventListener('touchend',e=>{ if(!e.target.closest('#board')) e.preventDefault(); },{passive:false}); })();
 function unzoom(){ const v=$('vp'); if(!v||!window.visualViewport||visualViewport.scale<=1.01) return;
   const c=v.content; v.content=c.replace('maximum-scale=1','maximum-scale=1.0001'); setTimeout(()=>v.content=c,60); }
 const SAVE='r0t8a.run.v2';
@@ -402,7 +406,8 @@ function codeWord(st){ const r=codeRow(st); if(r===null) return null; let w=''; 
 function cellTap(i){
   if(!live()||busy) return; const st=run.nodes[cur], r=(i/N)|0, cr=codeRow(st);
   if(st.locks[i]){ delete st.locks[i]; render(); Audio8.sfx('tick'); return; }
-  if(cr!==null&&cr!==r){ const el=cells[i]; el.classList.remove('nope'); el.offsetWidth; el.classList.add('nope'); return; }
+  const c=i%N;
+  if((cr!==null&&cr!==r)||D[i]!==st.lv.hidden[c]){ const el=cells[i]; el.classList.remove('nope'); el.offsetWidth; el.classList.add('nope'); Audio8.sfx('tick'); return; }
   st.locks[i]=D[i]; render(); Audio8.sfx('lock'); checkCharge();
 }
 // ---------- supercharge ----------
@@ -465,6 +470,7 @@ $('board').addEventListener('pointerup',e=>{ if(!p0) return;
   const r=$('board').getBoundingClientRect(), mx=(p0.x+e.clientX)/2-(r.left+r.width/2), my=(p0.y+e.clientY)/2-(r.top+r.height/2), cross=mx*dy-my*dx;
   if(Math.abs(cross/(Math.hypot(mx,my)*dist||1))>0.3) turn(cross>0?1:-1); p0=null; });
 $('board').addEventListener('pointercancel',()=>p0=null);
+$('board').addEventListener('touchend',e=>e.preventDefault(),{passive:false});
 $('rotL').onclick=()=>turn(-1); $('rotR').onclick=()=>turn(1);
 $('bReset').onclick=()=>{ if(!live()) return; const st=run.nodes[cur]; st.D=st.lv.grid.split(''); D=st.D; st.locks={}; render(); rainIn([0,1,2,3,4]); setTimeout(checkCharge,300); };
 $('bBack').onclick=()=>{ if(run&&!run.over) showMap(); };
