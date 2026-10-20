@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.30">
+<meta name="app-version" content="0.0.31">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -229,7 +229,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.30</div>
+<div id="ver">v0.0.31</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -524,6 +524,11 @@ async function share(key){
   try{ if(navigator.share){ await navigator.share({text}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   try{ await navigator.clipboard.writeText(text); toast('COPIED TO CLIPBOARD'); }catch(e){ prompt('Copy your result:',text); }
 }
+// testing aid: ?reset clears today's daily, ?reset=all wipes all history; the URL is then cleaned
+(function(){ const q=new URLSearchParams(location.search); if(!q.has('reset')) return;
+  if(q.get('reset')==='all') rec={}; else if(rec.days) delete rec.days[dkey(new Date())];
+  saveRec(); try{ history.replaceState(null,'',location.pathname); }catch(e){}
+  setTimeout(()=>toast(q.get('reset')==='all'?'ALL HISTORY WIPED':'TODAY RESET'),400); })();
 // a daily run that was started but never finished counts as traced
 (function(){ const D2=rec.days||{}; let ch=0; for(const k in D2) if(D2[k].started){ D2[k]={won:0,taken:0,left:0,n:0,g:'xxxxxxxxxxxxx'}; ch=1; } if(ch) saveRec(); })();
 function menu(){ Audio8.stop(); run=null; cur=null; ['map','node'].forEach(id=>$(id).classList.remove('on')); $('end').classList.remove('on'); $('menu').classList.add('on');
