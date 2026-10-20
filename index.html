@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.25">
+<meta name="app-version" content="0.0.26">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -67,7 +67,16 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
 #streak{display:flex;gap:18px;font-size:11px;letter-spacing:2px;color:var(--dim);text-align:center}
 #streak b{display:block;font-size:24px;color:var(--neon);text-shadow:0 0 10px var(--neon);letter-spacing:1px}
 #cal{width:min(100%,330px);border:1px solid var(--faint);border-radius:10px;padding:8px 8px 6px;background:rgba(2,4,10,.6)}
-#calHead{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:3px;color:var(--hi);margin-bottom:6px}
+#cal{cursor:pointer;transition:box-shadow .3s,border-color .3s}
+#cal.open{cursor:default;border-color:var(--dim);box-shadow:0 0 16px rgba(25,211,255,.18)}
+#calHead{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:3px;color:var(--hi);margin-bottom:6px;cursor:pointer}
+#calHead button{visibility:hidden}
+#cal.open #calHead button{visibility:visible}
+#calM::after{content:" ▾";color:var(--neon)}
+#cal.open #calM::after{content:" ▴"}
+#calGrid{overflow:hidden;padding:4px 3px;margin:0 -3px;transition:height .38s cubic-bezier(.3,.9,.3,1)}
+.cd.pop{animation:pop .32s backwards}
+@keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.85)}}
 #calHead button{background:none;border:none;color:var(--neon);font:inherit;font-size:16px;width:34px;height:28px;cursor:pointer}
 #calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .dow{font-size:8px;letter-spacing:1px;color:var(--dim);text-align:center}
@@ -220,7 +229,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.25</div>
+<div id="ver">v0.0.26</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -455,7 +464,9 @@ $('bReset').onclick=()=>{ if(!live()) return; const st=run.nodes[cur]; st.D=st.l
 $('bBack').onclick=()=>{ if(run&&!run.over) showMap(); };
 $('bJack').onclick=()=>jackIn(true); $('bFree').onclick=()=>jackIn(false);
 $('bShare0').onclick=()=>share(dkey(new Date())); $('eShare').onclick=()=>{ if(lastResult&&lastResult.daily) share(lastResult.daily); };
-$('calP').onclick=()=>{ calOff--; drawCal(); }; $('calN').onclick=()=>{ if(calOff<0){ calOff++; drawCal(); } }; $('bHow').onclick=()=>$('help').classList.add('on'); $('bHowX').onclick=()=>$('help').classList.remove('on'); $('eAgain').onclick=()=>jackIn(false);
+$('calP').onclick=e=>{ e.stopPropagation(); calOff--; drawCal(); }; $('calN').onclick=e=>{ e.stopPropagation(); if(calOff<0){ calOff++; drawCal(); } };
+$('cal').onclick=()=>{ if(!calOpen){ calOpen=true; calOff=0; drawCal(true); } };
+$('calHead').onclick=e=>{ if(calOpen){ e.stopPropagation(); calOpen=false; calOff=0; drawCal(true); } }; $('bHow').onclick=()=>$('help').classList.add('on'); $('bHowX').onclick=()=>$('help').classList.remove('on'); $('eAgain').onclick=()=>jackIn(false);
 $('eMenu').onclick=menu; $('bAbort').onclick=()=>{ if(confirm(run&&run.daily?'Abort today\'s run? It will count as traced.':'Abort this run?')){ if(run&&run.daily&&!run.over) endRun(false); else menu(); } };
 let lastResult=null, calOff=0;
 function streaks(){
@@ -466,7 +477,25 @@ function streaks(){
   // today not yet played doesn't break a streak
   return {now:run_,best,bestT};
 }
-function drawCal(){
+let calOpen=false;
+function drawCal(anim){
+  const g=$('calGrid'), h1=g.offsetHeight;
+  $('cal').classList.toggle('open',calOpen);
+  if(!calOpen){ // compact: just this week (Mon–Sun)
+    const t=new Date(), mon=new Date(t); mon.setDate(t.getDate()-(t.getDay()+6)%7); const today=dkey(t);
+    $('calM').textContent='THIS WEEK'; g.innerHTML='';
+    ['M','T','W','T','F','S','S'].forEach(d=>{ const e=document.createElement('div'); e.className='dow'; e.textContent=d; g.appendChild(e); });
+    for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); const k=dkey(d), r=(rec.days||{})[k], e=document.createElement('div');
+      e.className='cd'+(r&&r.won?' won':r&&!r.won&&!r.started?' lost':'')+(k===today?' today':'')+(k>today?' future':'');
+      e.innerHTML=d.getDate()+(r&&r.won?`<i>${fmt(r.taken)}</i>`:r&&!r.started?'<i>✕</i>':''); g.appendChild(e); }
+    return morph(g,h1,anim);
+  }
+  drawMonth(); morph(g,h1,anim);
+  if(anim) [...g.querySelectorAll('.cd')].forEach((e,i)=>e.style.animationDelay=(i*12)+'ms'), g.querySelectorAll('.cd').forEach(e=>e.classList.add('pop'));
+}
+function morph(g,h1,anim){ if(!anim){ g.style.height=''; return; } const h2=g.scrollHeight; g.style.height=h1+'px'; g.offsetHeight; g.style.height=h2+'px';
+  clearTimeout(morph.t); morph.t=setTimeout(()=>g.style.height='',420); }
+function drawMonth(){
   const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+calOff);
   const y=base.getFullYear(), m=base.getMonth(), today=dkey(new Date());
   $('calM').textContent=base.toLocaleString('en-GB',{month:'long',year:'numeric'}).toUpperCase();
@@ -498,7 +527,7 @@ function menu(){ Audio8.stop(); run=null; cur=null; ['map','node'].forEach(id=>$
   $('sNow').textContent=st.now; $('sBest').textContent=st.best; $('sTime').textContent=st.bestT===null?'–':fmt(st.bestT);
   $('bJack').textContent=r?(r.won?`#${dayNo(today)} OWNED · ${fmt(r.taken)}`:`#${dayNo(today)} TRACED`):`JACK IN · DAILY #${dayNo(today)}`;
   $('bJack').disabled=!!r; $('bJack').style.opacity=r?.6:1; $('bShare0').style.display=r?'':'none';
-  calOff=0; drawCal(); }
+  calOff=0; calOpen=false; drawCal(); }
 addEventListener('resize',()=>{ if(cur) layout(); });
 // ---------- audio: dark EDM loop, synthesised live (no files) ----------
 const Audio8=(()=>{
