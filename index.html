@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.24">
+<meta name="app-version" content="0.0.25">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -79,6 +79,9 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
 .cd.today{outline:2px solid var(--ok);outline-offset:1px;animation:pulse 1.6s infinite}
 .cd.future{opacity:.35}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;padding:10px 18px;border:1px solid var(--ok);border-radius:8px;background:rgba(2,4,10,.95);color:var(--ok);font-size:13px;letter-spacing:3px;animation:bonus 1.6s forwards}
+#more{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;letter-spacing:3px;color:var(--dim);text-decoration:none;padding:4px 10px;text-align:center}
+#more b{font-size:13px;color:var(--neon);font-weight:400;letter-spacing:4px;text-shadow:0 0 8px var(--neon)}
+#more:hover,#more:active{color:var(--hi)}
 #menu{gap:10px;overflow-y:auto;justify-content:safe center}
 /* trace clock */
 .clock{font-size:26px;font-weight:700;letter-spacing:2px;color:var(--neon);text-shadow:0 0 10px var(--neon);font-variant-numeric:tabular-nums}
@@ -166,6 +169,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
     <div class="row"><button class="btn wide" id="bShare0">SHARE</button><button class="btn wide" id="bFree">FREE RUN</button></div>
     <button class="btn wide" id="bHow">HOW TO HACK</button>
   </div>
+  <a id="more" href="https://room46.uk" target="_blank" rel="noopener"><span>MORE GAMES FROM THIS DEV</span><b>ROOM46.UK ▸</b></a>
 </div>
 
 <div class="ov" id="help">
@@ -216,7 +220,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.24</div>
+<div id="ver">v0.0.25</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
