@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" id="vp" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="app-repo" content="R0T8A">
-<meta name="app-version" content="0.0.33">
+<meta name="app-version" content="0.0.36">
 <meta name="theme-color" content="#02040a">
 <title>R0T8A</title>
 <style>
@@ -160,6 +160,23 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
 .pw{font-size:30px;letter-spacing:10px;text-shadow:0 0 14px currentColor}
 .line{font-size:13px;letter-spacing:2px;color:var(--hi);line-height:1.7}
 .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+/* training */
+#tut{display:none;width:100%;border:1px solid var(--ok);border-radius:10px;background:rgba(2,12,8,.85);box-shadow:0 0 12px rgba(125,255,176,.25);padding:8px 10px;min-height:96px;flex-direction:column;gap:6px}
+body.tut #tut{display:flex}
+#tutH{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:3px;color:var(--ok)}
+#tutH b{font-size:14px;letter-spacing:5px;color:var(--ok);text-shadow:0 0 8px var(--ok)}
+#tutT{font-size:12.5px;line-height:1.5;color:var(--hi)}
+#tutT em{font-style:normal;color:var(--neon);font-weight:700;text-shadow:0 0 6px var(--neon)}
+#tutT.say{animation:say .35s}
+@keyframes say{from{opacity:0;transform:translateY(4px)}}
+#tutNext{align-self:flex-end;height:34px;font-size:13px;letter-spacing:3px;border-color:var(--ok);color:var(--ok);display:none}
+#tutNext.on{display:inline-block}
+.tgt{outline:3px solid var(--ok)!important;outline-offset:2px;animation:tgt 1s ease-in-out infinite!important}
+@keyframes tgt{50%{outline-color:rgba(125,255,176,.25)}}
+.tgt.nudge{animation:nope .4s!important}
+body.tut .clock{visibility:hidden}
+#bTut.new{border-color:var(--ok);color:var(--ok);animation:pulseOk 1.6s infinite}
+@keyframes pulseOk{50%{box-shadow:0 0 18px var(--ok)}}
 #ver{position:fixed;z-index:3;right:8px;bottom:calc(6px + env(safe-area-inset-bottom));font-size:10px;color:var(--dim);letter-spacing:1px}
 </style>
 </head>
@@ -176,7 +193,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="menuBtns">
     <button class="btn big" id="bJack">JACK IN</button>
     <div class="row"><button class="btn wide" id="bShare0">SHARE</button><button class="btn wide" id="bFree">FREE RUN</button></div>
-    <button class="btn wide" id="bHow">HOW TO HACK</button>
+    <div class="row"><button class="btn wide" id="bTut">TRAINING</button><button class="btn wide" id="bHow">MANUAL</button></div>
   </div>
   <a id="more" href="https://room46.uk" target="_blank" rel="noopener"><span>MORE GAMES FROM THIS DEV</span><b>ROOM46.UK ▸</b></a>
 </div>
@@ -213,6 +230,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
     <button class="btn mute" id="bMute2" aria-label="Music on or off">♪</button>
     <button class="btn" id="bReset" aria-label="Reset layout">↺</button>
   </div>
+  <div id="tut"><div id="tutH"><span id="tutL">TRAINING 1/2</span><span>PASSWORD <b id="tutPw">CRANE</b></span></div><div id="tutT"></div><button class="btn" id="tutNext">NEXT ▸</button></div>
   <div id="marks"></div>
   <div id="board"><div id="rot"></div><div id="drops"></div><div id="charge"><span>SWIPE ▶▶▶</span><i></i></div></div>
   <div id="code"></div>
@@ -229,7 +247,7 @@ h2{margin:0;font-size:28px;letter-spacing:5px;text-shadow:0 0 12px currentColor}
   <div class="row"><button class="btn big" id="eShare">SHARE</button></div>
   <div class="row"><button class="btn wide" id="eAgain">FREE RUN</button><button class="btn wide" id="eMenu">MENU</button></div>
 </div>
-<div id="ver">v0.0.33</div>
+<div id="ver">v0.0.36</div>
 
 <script id="logic">
 // ---- pure logic (tested headless) ----
@@ -286,6 +304,7 @@ let run=null, cur=null, D, busy=false, cells=[], lastT=0;
 // ---------- run ----------
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=(RND()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function jackIn(daily){
+  document.body.classList.remove('tut');
   const key=dkey(new Date());
   if(daily){ if(rec.days&&rec.days[key]) return; RND=mulberry(hashStr('R0T8A:'+key)); rec.days=rec.days||{}; rec.days[key]={started:1}; saveRec(); }
   else RND=Math.random;
@@ -305,7 +324,7 @@ function addTime(sec,anchor){
 }
 function tick(t){
   const dt=lastT?t-lastT:0; lastT=t;
-  if(run&&!run.over&&!$('menu').classList.contains('on')){
+  if(run&&!run.tut&&!run.over&&!$('menu').classList.contains('on')){
     run.left-=dt; Audio8.tension(run.left);
     const s=fmt(run.left), hot=run.left<30000;
     ['clkMap','clkNode'].forEach(id=>{ const e=$(id); e.innerHTML='<small>TRACE</small>'+s; e.classList.toggle('hot',hot); });
@@ -364,10 +383,10 @@ function showMap(){
 
 // ---------- node ----------
 function layout(){
-  const S=Math.max(220,Math.min(innerWidth-32,innerHeight-250,560));
+  const S=Math.max(220,Math.min(innerWidth-32,innerHeight-(run&&run.tut?370:250),560));
   const gap=Math.round(S*0.03), cell=(S-4*gap)/5;
   const b=$('board'); b.style.width=b.style.height=S+'px'; $('rot').style.gap=gap+'px'; $('rot').style.fontSize=Math.round(cell*0.5)+'px';
-  $('marks').style.width=S+'px'; $('marks').style.gap=gap+'px'; $('hud').style.maxWidth=S+'px'; $('drops').style.fontSize=Math.round(cell*0.38)+'px';
+  $('marks').style.width=S+'px'; $('marks').style.gap=gap+'px'; $('hud').style.maxWidth=S+'px'; $('tut').style.maxWidth=(S+8)+'px'; $('drops').style.fontSize=Math.round(cell*0.38)+'px';
 }
 function enter(id){
   unzoom(); cur=id; const st=run.nodes[id]; if(!st.D) st.D=st.lv.grid.split(''); D=st.D; busy=false; charged=null; $('charge').className='';
@@ -393,22 +412,22 @@ function render(){
 }
 let charged=null;
 function live(){ return cur&&run&&!run.over&&!run.nodes[cur].done&&!charged; }
-function colTap(c){ if(!live()||busy) return; D=shiftDown(D,c); run.nodes[cur].D=D; render(); rainCol(c); Audio8.sfx('tick'); setTimeout(checkCharge,200); }
+function colTap(c){ if(!live()||busy||!tutOk('shift',c)) return; D=shiftDown(D,c); run.nodes[cur].D=D; render(); rainCol(c); Audio8.sfx('tick'); tutDone(); setTimeout(checkCharge,200); }
 function turn(dir){
-  if(!live()||busy) return; busy=true; render(); Audio8.sfx('spin');
+  if(!live()||busy||!tutOk('spin',dir)) return; busy=true; render(); Audio8.sfx('spin');
   $('rot').style.transform=`rotate(${dir*90}deg)`;
   setTimeout(()=>{ D=dir>0?rotCW(D):rotCCW(D); run.nodes[cur].D=D; $('rot').classList.add('snap'); $('rot').style.transform='';
-    render(); $('rot').offsetWidth; $('rot').classList.remove('snap'); busy=false; rainIn([0,1,2,3,4]); setTimeout(checkCharge,260); },230);
+    render(); $('rot').offsetWidth; $('rot').classList.remove('snap'); busy=false; rainIn([0,1,2,3,4]); tutDone(); setTimeout(checkCharge,260); },230);
 }
 // locks: screen square -> letter. They stay fixed while letters move; all locks share one row.
 function codeRow(st){ const k=Object.keys(st.locks); return k.length?((+k[0]/N)|0):null; }
 function codeWord(st){ const r=codeRow(st); if(r===null) return null; let w=''; for(let c=0;c<N;c++){ const g=st.locks[r*N+c]; if(!g) return null; w+=g; } return w; }
 function cellTap(i){
-  if(!live()||busy) return; const st=run.nodes[cur], r=(i/N)|0, cr=codeRow(st);
+  if(!live()||busy||!tutOk('tap',i)) return; const st=run.nodes[cur], r=(i/N)|0, cr=codeRow(st);
   if(st.locks[i]){ delete st.locks[i]; render(); Audio8.sfx('tick'); return; }
   const c=i%N;
   if((cr!==null&&cr!==r)||D[i]!==st.lv.hidden[c]){ const el=cells[i]; el.classList.remove('nope'); el.offsetWidth; el.classList.add('nope'); Audio8.sfx('tick'); return; }
-  st.locks[i]=D[i]; render(); Audio8.sfx('lock'); checkCharge();
+  st.locks[i]=D[i]; render(); Audio8.sfx('lock'); if(run.tut&&tutStep().act==='lock'&&tutStep().arg.some(k=>!st.locks[k])) cells[i].classList.remove('tgt'); else tutDone(); checkCharge();
 }
 // ---------- supercharge ----------
 // Ready when, for every column, the password letter is in that column (live, any row) or locked as a ghost in the code row.
@@ -434,6 +453,7 @@ function fire(){
   for(let c=0;c<N;c++){ const el=cells[R*N+c]; el.textContent=st.lv.hidden[c]; el.classList.remove('hotrow');
     setTimeout(()=>{ el.classList.add('surge','won'); },c*75); }
   if(fast){ run.left+=10000; const big=document.createElement('div'); big.className='bigfx'; big.innerHTML='<b>+10s</b><small>SUPERCHARGE</small>'; document.body.appendChild(big); setTimeout(()=>big.remove(),1700); }
+  if(run.tut) return setTimeout(tutLesson,fast?1800:1300,run.tut.lesson+1);
   if(cur==='R') return setTimeout(()=>endRun(true),900);
   if(BONUS[n.tier]) setTimeout(()=>addTime(BONUS[n.tier],'clkNode'),fast?700:200);
   setTimeout(()=>{ if(!run.over) showMap(); },fast?1700:1200);
@@ -460,6 +480,85 @@ function rainIn(cols,slow){
 }
 function rainCol(c){ for(let r=0;r<N;r++) animate(r*N+c,r*35,130); drops(c,2); }
 
+
+// ---------- training: two guided nodes, one action allowed at a time ----------
+// L1 CRANE: rows become columns when you spin. L2 STATE: lock one T as a ghost, steer the real T to its other column.
+const TUT=[
+ {pw:'CRANE', grid:'JBLCWZROQDAIHGNFUTPVSMEYK', steps:[
+  {say:'Every letter shows how close it is to the password.<br><em>BRIGHT</em> right letter, right column · <em>PALE</em> in the password, wrong column · DARK not in it.', hl:'lit'},
+  {say:'<em>R</em> is bright: it\'s in column 2, and R is CRANE\'s 2nd letter. Make all five bright to crack the node.', hl:'R'},
+  {say:'▾ slides a column down, but letters never leave their column. To change a letter\'s column you have to <em>SPIN</em>. Tap ⟲.', act:'spin', arg:-1},
+  {say:'Each <em>ROW</em> became a <em>COLUMN</em>: top row → column 1, 2nd row → column 2… Four went bright, but N was in row 3, so it landed in column 3. Spin back with ⟳.', act:'spin', arg:1},
+  {say:'So plan in <em>rows</em>: C row 1, R row 2, A row 3, N row 4, E row 5. Only N is off: it\'s in row 3. Tap ▾ on its column to drop it to row 4.', act:'shift', arg:4, hl:'N'},
+  {say:'Every letter is in its row. Now ⟲ to turn the rows into columns, then get ready to swipe fast.', act:'spin', arg:-1},
+  {say:'All five lit, so they snap into one row. <em>SWIPE ▶</em> left to right across it. Within 1 second = +10s SUPERCHARGE.', act:'swipe'}]},
+ {pw:'CHILL', grid:'CHQSMDFYNVIGZTOJULKEBRWPA', steps:[
+  {say:'CHILL has two Ls, but the grid only holds one of each letter. That\'s why only <em>four</em> letters light up.', hl:'lit'},
+  {say:'The plan: get C H I L <em>bright</em>, line them up in <em>one row</em>, lock them as <em>ghosts</em>, then send the L round to fill the gap.'},
+  {say:'Row trick first. Before ⟲: C row 1, H row 2, I row 3, L row 4. H is a row too high. Tap ▾ on its column.', act:'shift', arg:1, hl:'H'},
+  {say:'Every letter is in its row. Now ⟲.', act:'spin', arg:-1},
+  {say:'All four bright, but scattered. Ghosts must share one row, so line them up in <em>row 5</em>. C and I are there already. ▾ H\'s column once.', act:'shift', arg:1, hl:'H'},
+  {say:'Now ▾ L\'s column. It needs two drops.', act:'shift', arg:3, hl:'L'},
+  {say:'One more ▾ for L.', act:'shift', arg:3, hl:'L'},
+  {say:'<em>CHIL_</em> is lined up in row 5. <em>Tap all four</em> to lock them as ghosts.', act:'lock', arg:[20,21,22,23]},
+  {say:'Ghosts hold <em>C H I L _</em> and stay put while everything moves. The real L is free to fill the gap in column 5.', hl:'ghost'},
+  {say:'The L is in row 5, so ⟲ sends it to column 5.', act:'spin', arg:-1, hl:'L'},
+  {say:'CHIL<em>L</em> complete. <em>SWIPE ▶</em> to crack it.', act:'swipe'}]}];
+function tutSeen(){ try{ return localStorage.getItem('r0t8a.tut')==='done'; }catch(e){ return true; } }
+function tutStart(){
+  RND=Math.random; const nodes={};
+  TUT.forEach((L,k)=>{ const id='T'+(k+1); BY[id]={id,name:'TRAINING '+(k+1)+'/2',tier:'A'}; nodes[id]={lv:{grid:L.grid,hidden:L.pw},D:null,locks:{},done:false}; });
+  run={tut:{lesson:0,step:0}, left:T0*1000, nodes, over:false, cracked:0, start:performance.now(), daily:null};
+  document.body.classList.add('tut'); $('menu').classList.remove('on'); $('help').classList.remove('on'); Audio8.start(); tutLesson(0);
+}
+function tutLesson(k){
+  if(!run||!run.tut) return;
+  if(k>=TUT.length) return tutFinish();
+  const id='T'+(k+1), st=run.nodes[id]; st.D=null; st.locks={}; st.done=false; st.zap=false;
+  run.tut={lesson:k,step:0}; $('tutL').textContent='TRAINING '+(k+1)+'/2'; $('tutPw').textContent=TUT[k].pw;
+  enter(id); tutShow();
+}
+function tutStep(){ return run&&run.tut?TUT[run.tut.lesson].steps[run.tut.step]:null; }
+function tutTargets(s){
+  const out=[]; if(!s) return out;
+  if(!s.act) out.push($('tutNext'));
+  if(s.act==='spin') out.push($(s.arg<0?'rotL':'rotR'));
+  if(s.act==='shift') out.push($('marks').children[s.arg]);
+  if(s.act==='tap') out.push(cells[s.arg]);
+  if(s.act==='lock') s.arg.forEach(i=>{ if(!run.nodes[cur].locks[i]) out.push(cells[i]); });
+  const pw=lvH();
+  if(s.hl==='lit') cells.forEach((c,i)=>{ if(pw.includes(D[i])) out.push(c); });
+  else if(s.hl==='ghost') cells.forEach((c,i)=>{ if(run.nodes[cur].locks[i]) out.push(c); });
+  else if(s.hl) out.push(cells[D.indexOf(s.hl)]);
+  return out;
+}
+function tutShow(){
+  const s=tutStep(); document.querySelectorAll('.tgt').forEach(e=>e.classList.remove('tgt','nudge'));
+  if(!s) return;
+  const t=$('tutT'); t.innerHTML=s.say; t.classList.remove('say'); t.offsetWidth; t.classList.add('say');
+  $('tutNext').classList.toggle('on',!s.act);
+  tutTargets(s).forEach(e=>e&&e.classList.add('tgt'));
+}
+// gate: in training only the move the current step asks for is allowed
+function tutOk(act,arg){
+  const s=tutStep(); if(!s) return true;
+  if(s.act===act&&s.arg===arg) return true;
+  if(s.act==='lock'&&act==='tap'&&s.arg.includes(arg)&&!run.nodes[cur].locks[arg]) return true;
+  document.querySelectorAll('.tgt').forEach(e=>{ e.classList.remove('nudge'); e.offsetWidth; e.classList.add('nudge'); setTimeout(()=>e.classList.remove('nudge'),420); });
+  return false;
+}
+function tutDone(){ if(!run||!run.tut) return; run.tut.step++; tutShow(); }
+function tutFinish(){
+  try{ localStorage.setItem('r0t8a.tut','done'); }catch(e){}
+  run.over=true; Audio8.sfx('win'); setTimeout(()=>Audio8.stop(),2000);
+  $('eTitle').textContent='TRAINING COMPLETE'; $('eTitle').style.color='var(--ok)';
+  $('eBig').textContent='READY'; $('eBig').style.color='var(--ok)';
+  $('eLine').innerHTML='Plan letters into the right rows, spin, swipe.<br>Repeated letter? Line up the rest,<br>lock them as ghosts, then fill the gap.<br>Tap a ghost to release it.';
+  $('eShare').style.display='none'; $('end').classList.add('on');
+}
+$('tutNext').onclick=()=>{ const s=tutStep(); if(s&&!s.act) tutDone(); };
+$('bTut').onclick=tutStart;
+
 // ---------- input ----------
 let p0=null;
 $('board').addEventListener('pointerdown',e=>{ p0={x:e.clientX,y:e.clientY,cell:e.target.closest('.cell')}; });
@@ -472,8 +571,8 @@ $('board').addEventListener('pointerup',e=>{ if(!p0) return;
 $('board').addEventListener('pointercancel',()=>p0=null);
 $('board').addEventListener('touchend',e=>e.preventDefault(),{passive:false});
 $('rotL').onclick=()=>turn(-1); $('rotR').onclick=()=>turn(1);
-$('bReset').onclick=()=>{ if(!live()) return; const st=run.nodes[cur]; st.D=st.lv.grid.split(''); D=st.D; st.locks={}; render(); rainIn([0,1,2,3,4]); setTimeout(checkCharge,300); };
-$('bBack').onclick=()=>{ if(run&&!run.over) showMap(); };
+$('bReset').onclick=()=>{ if(run&&run.tut){ if(live()) tutLesson(run.tut.lesson); return; } if(!live()) return; const st=run.nodes[cur]; st.D=st.lv.grid.split(''); D=st.D; st.locks={}; render(); rainIn([0,1,2,3,4]); setTimeout(checkCharge,300); };
+$('bBack').onclick=()=>{ if(run&&run.tut) return menu(); if(run&&!run.over) showMap(); };
 $('bJack').onclick=()=>jackIn(true); $('bFree').onclick=()=>jackIn(false);
 $('bShare0').onclick=()=>share(dkey(new Date())); $('eShare').onclick=()=>{ if(lastResult&&lastResult.daily) share(lastResult.daily); };
 $('calP').onclick=e=>{ e.stopPropagation(); calOff--; drawCal(); }; $('calN').onclick=e=>{ e.stopPropagation(); if(calOff<0){ calOff++; drawCal(); } };
@@ -543,12 +642,12 @@ async function share(key){
   setTimeout(()=>toast(q.get('reset')==='all'?'ALL HISTORY WIPED':'TODAY RESET'),400); })();
 // a daily run that was started but never finished counts as traced
 (function(){ const D2=rec.days||{}; let ch=0; for(const k in D2) if(D2[k].started){ D2[k]={won:0,taken:0,left:0,n:0,g:'xxxxxxxxxxxxx'}; ch=1; } if(ch) saveRec(); })();
-function menu(){ unzoom(); Audio8.stop(); run=null; cur=null; ['map','node'].forEach(id=>$(id).classList.remove('on')); $('end').classList.remove('on'); $('menu').classList.add('on');
+function menu(){ unzoom(); Audio8.stop(); document.body.classList.remove('tut'); run=null; cur=null; ['map','node'].forEach(id=>$(id).classList.remove('on')); $('end').classList.remove('on'); $('menu').classList.add('on');
   const st=streaks(), today=dkey(new Date()), r=(rec.days||{})[today];
   $('sNow').textContent=st.now; $('sBest').textContent=st.best; $('sTime').textContent=st.bestT===null?'–':fmt(st.bestT);
   $('bJack').textContent=r?(r.won?`#${dayNo(today)} OWNED · ${fmt(r.taken)}`:`#${dayNo(today)} TRACED`):`JACK IN · DAILY #${dayNo(today)}`;
   $('bJack').disabled=!!r; $('bJack').style.opacity=r?.6:1; $('bShare0').style.display=r?'':'none';
-  calOff=0; calOpen=false; drawCal(); }
+  calOff=0; calOpen=false; drawCal(); $('bTut').classList.toggle('new',!tutSeen()); }
 addEventListener('resize',()=>{ if(cur) layout(); });
 // ---------- audio: dark EDM loop, synthesised live (no files) ----------
 const Audio8=(()=>{
